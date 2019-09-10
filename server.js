@@ -20,17 +20,16 @@ connection.connect( ( error ) => {
     }
 } );
 
-
+//fetch subjects
 app.get( '/subjects', ( req, res ) => {
     connection.query( subjectQuery, ( error, results ) => {
-       
+
         if ( error ) throw error;
         let subjectData = JSON.stringify( results );
         subjectData = JSON.parse( subjectData );
         return res.send( subjectData );
     } );
 } );
-
 
 app.get( '/degrees', ( req, res ) => {
     connection.query( departmenDegreeConcentrationJoin, ( error, results ) => {
@@ -42,7 +41,6 @@ app.get( '/degrees', ( req, res ) => {
     } );
 } );
 
-
 app.get( '/saved', ( req, res ) => {
     const { name } = req.query;
 
@@ -50,7 +48,13 @@ app.get( '/saved', ( req, res ) => {
         return;
     }
 
-    const query = `SELECT concentration_id AS concentrationId, course_id AS courseId, requirement_type_id AS requirementTypeId, semester, credit_hour AS creditHours FROM graduation_requirement WHERE concentration_id=${ name }`
+    const query = `SELECT concentration_id AS concentrationId, 
+    course_id AS courseId, 
+    requirement_type_id AS requirementTypeId, 
+    semester, 
+    credit_hour AS creditHours 
+    FROM graduation_requirement 
+    WHERE concentration_id=${ name }`
 
     connection.query( query, ( error, results ) => {
         let data = JSON.stringify( results );
@@ -62,8 +66,11 @@ app.get( '/saved', ( req, res ) => {
 
 app.get( '/courses', ( req, res ) => {
     const { id } = req.query;
-    const query = `SELECT course_id AS courseId, course_subject_id AS courseSubjectId, credit_hours AS creditHours
-    FROM course WHERE course_subject_id =${id }`
+    const query = `SELECT course_id AS courseId, 
+    course_subject_id AS courseSubjectId, 
+    credit_hours AS creditHours
+    FROM course 
+    WHERE course_subject_id =${id }`
 
     connection.query( query, ( error, results ) => {
         let data = JSON.stringify( results );
@@ -79,8 +86,6 @@ app.get( '/insert', ( req, res ) => {
     const courses = graduationRequirements.course;
     const concentrationId = Number( graduationRequirements.concentration );
 
-
-
     //remove any double courses
     const coursesToBeSaved = [];
     const map = new Map();
@@ -91,18 +96,19 @@ app.get( '/insert', ( req, res ) => {
                 courseId: item.courseId,
                 courseSubjectId: item.courseSubjectId,
                 creditHours: item.creditHours
-            } ); 
+            } );
         }
     }
 
     connection.query( `
-    SELECT concentration_id, course_id, requirement_type_id, semester, credit_hour 
+    SELECT concentration_id, 
+    course_id, requirement_type_id, semester, credit_hour 
     FROM graduation_requirement
     WHERE concentration_id = ${concentrationId }`,
         ( error, results ) => {
             let data = JSON.stringify( results );
             data = JSON.parse( data );
- 
+
             const alreadySavedCourses = data.map( course => course.course_id );
 
             //extract only coursesId to be compared to already saved courses in the database
@@ -112,11 +118,11 @@ app.get( '/insert', ( req, res ) => {
             const duplicates = coursesToBeSavedId.some( id => alreadySavedCourses.includes( id ) );
 
             if ( duplicates ) {
-               
+
                 const duplicateLocations = alreadySavedCourses.map( id => coursesToBeSavedId.indexOf( id ) );
                 duplicateLocations.sort( ( a, b ) => a - b );
-                console.log(alreadySavedCourses, duplicateLocations)
- 
+                console.log( alreadySavedCourses, duplicateLocations )
+
 
                 for ( let i = duplicateLocations.length - 1; i >= 0; i-- ) {
                     //anything greater than -1 is a location of a duplicate course
@@ -127,17 +133,16 @@ app.get( '/insert', ( req, res ) => {
                 }
             }
 
-
             for ( let i = 0; i < coursesToBeSaved.length; i++ ) {
                 connection.query( `
-            INSERT INTO graduation_requirement (concentration_id, course_id, requirement_type_id, semester, credit_hour)
-            VALUES(${concentrationId }, '${ coursesToBeSaved[ i ].courseId }', 
-            2, 0, ${ coursesToBeSaved[ i ].creditHours })`,
-                    ( error, results ) => {
+                INSERT INTO graduation_requirement 
+                (concentration_id, course_id, requirement_type_id, semester, credit_hour)
+                VALUES(${concentrationId }, '${ coursesToBeSaved[ i ].courseId }', 
+                2, 0, ${ coursesToBeSaved[ i ].creditHours })`,
 
+                    ( error ) => {
                         if ( error ) throw error;
                         console.log( 'insert complete' );
-
                     } );
             }
             res.send( { duplicateCourses: [] } );
@@ -148,12 +153,18 @@ app.get( '/delete', ( req, res ) => {
     let { deleteCourse } = req.query;
     deleteCourse = JSON.parse( deleteCourse );
 
-    const query = `DELETE from graduation_requirement where concentration_id = ${ deleteCourse.CONCENTRATION_ID }
-     and course_id = '${deleteCourse.courseId }'`;
+    const query = `DELETE from graduation_requirement 
+    WHERE concentration_id = ${ deleteCourse.CONCENTRATION_ID }
+    AND course_id = '${deleteCourse.courseId }'`;
 
     connection.query( query, ( error, results ) => {
         if ( error ) throw error;
-        else console.log( `concentration: ${ deleteCourse.CONCENTRATION_ID }, course: ${ deleteCourse.courseId } has been deleted` );
+        else {
+            let concentration = deleteCourse.CONCENTRATION_ID;
+            let course = deleteCourse.courseId;
+            console.log( `concentration: ${ concentration }, course: ${ course } has been deleted` );
+        }
+
     } );
     res.send( { message: 'deleted a course' } )
 } );
@@ -162,9 +173,10 @@ app.get( '/delete', ( req, res ) => {
 app.get( '/deleteAllCourses', ( req, res ) => {
     let { id } = req.query;
     const query = `DELETE FROM graduation_requirement WHERE concentration_id = ${ id }`;
+    
     connection.query( query, ( error, results ) => {
         if ( error ) throw error;
-        else console.log( 'Graduation requirements from the concentration has been deleted' );
+        else console.log( 'Graduation requirements have been deleted' );
     } )
 } );
 
