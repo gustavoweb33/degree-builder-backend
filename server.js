@@ -88,10 +88,12 @@ app.get( '/insert', ( req, res ) => {
 
     //remove any double courses
     const coursesToBeSaved = [];
-    const map = new Map();
+    const tempObj = new Map();
+    //the tempObject will be used to check if an item is already present in the object
+    //if it doesn't included it, the course will be pushed to the coursesToBeSaved array
     for ( const item of courses ) {
-        if ( !map.has( item.courseId ) ) {
-            map.set( item.courseId, true );    // set any value to Map
+        if ( !tempObj.has( item.courseId ) ) {
+            tempObj.set( item.courseId, true );    // set any value for the tempObj
             coursesToBeSaved.push( {
                 courseId: item.courseId,
                 courseSubjectId: item.courseSubjectId,
@@ -121,9 +123,7 @@ app.get( '/insert', ( req, res ) => {
 
                 const duplicateLocations = alreadySavedCourses.map( id => coursesToBeSavedId.indexOf( id ) );
                 duplicateLocations.sort( ( a, b ) => a - b );
-                console.log( alreadySavedCourses, duplicateLocations )
-
-
+    
                 for ( let i = duplicateLocations.length - 1; i >= 0; i-- ) {
                     //anything greater than -1 is a location of a duplicate course
                     //duplicates are removed
@@ -145,7 +145,7 @@ app.get( '/insert', ( req, res ) => {
                         console.log( 'insert complete' );
                     } );
             }
-            res.send( { duplicateCourses: [] } );
+            res.send( { resetState: [] } );
         } );
 } );
 

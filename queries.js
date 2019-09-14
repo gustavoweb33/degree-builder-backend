@@ -2,8 +2,7 @@
 
 export const subjectQuery = `SELECT course_subject_id AS subjectId, 
 course_subject_prefix AS subject, 
-course_subject_description AS d
-escription 
+course_subject_description AS description 
 FROM course_subject`;
 
 export const departmenDegreeConcentrationJoin = `
